@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 import torch
 
-MODEL_NAME = "openai/gpt-oss-120b"
+MODEL_NAME = "NousResearch/Hermes-4-405B-FP8"
 
 class RAGPipeline:
     __templates_path__ = "./templates"
@@ -44,15 +44,11 @@ class RAGPipeline:
 
         if llm_provider == "local":
             # нужен токен внутри os.environ["HF_TOKEN"]
-            self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-            self.model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
-            
-            self.generator = pipeline(
-                "text-generation",
-                model=self.model,
-                tokenizer=self.tokenizer,
-                torch_dtype="auto",
-                device_map="auto",
+            self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)
+            self.model = AutoModelForCausalLM.from_pretrained(
+                MODEL_NAME,
+                torch_dtype=torch.float16,
+                device_map="auto"
             )
     
     def create_embeddings(self, texts: List[str]) -> np.ndarray:
@@ -100,9 +96,13 @@ class RAGPipeline:
             raise NotImplementedError("This type wasn't implemented yet")
         
         elif self.llm_provider == "local":
-            formatted_prompt = f"[INST] {prompt} {question} [/INST]"
-            outputs = self.generator(formatted_prompt)
-            return outputs[0]["generated_text"]
+            messages = [
+                 {"role": "system", "content": prompt},
+                {"role": "user", "content": question},
+            ]
+            inputs = self.tokenizer.apply_chat_template(messages, add_generation_prompt=True, return_tensors="pt").to(self.model.device)
+            outputs = self.model.generate(**inputs, max_new_tokens=400, temperature=0.6, top_p=0.95, top_k=20, do_sample=True)
+            return self.tokenizer.decode(outputs[0], skip_special_tokens=True)
         
         return "LLM provider not implemented"
     

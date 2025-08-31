@@ -8,3 +8,5 @@ langchain
 Jinja2
 openai
 transformers
+accelerate
+compressed-tensors
