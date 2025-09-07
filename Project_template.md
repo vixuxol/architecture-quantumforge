@@ -25,26 +25,72 @@
 
 ### Сравнение моделей эмбеддингов
 
+Облачные эмбеддинги исключаются из-за конфиденциальности.
 
-| Критерий | Локальные Sentence-Transformers | Облачные OpenAI Embeddings |
-| - | - | - |
-| Скорость создания индекса | - | - |
-| Качество поиска | - | - |
-| Стоимость владения и использования | - | - |
+| Критерий | Локальные Sentence-Transformers                                                                                  | Облачные OpenAI Embeddings                                                                                                              |
+| - |------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| Скорость создания индекса | Зависит от CPU/GPU. На современном CPU обработка тысяч документов занимает минуты/часы. Можно ускорить на GPU.   | Очень высокая. Но есть лимиты на количество запросов в минуту (RPM). Пакетная обработка большой базы знаний может занять много времени. |
+| Качество поиска | Очень хорошее для современных моделей. Специализированные модели часто обгоняют общие облачные на узких задачах. | Эталонное. OpenAI embeddings показывают одно из лучших качеств на общедоступных benchmarks.                                             |
+| Стоимость владения и использования | Бесплатно (после развёртывания инфраструктуры).                                                                  | Плата за токен. При большом объёме документов стоимость создания индекса может быть огромной.                                           |
+
+Локальные модели более чем достаточны. Качество можно улучшить, подобрав или обучив модель на своих данных.
 
 ### Сравнение векторных баз ChromaDB и FAISS
 
-| Критерий | ChromaDB | FAISS |
-| - | - | - |
-| Скорость поиска и индексации | - | - |
-| Сложность внедрения и поддержки | - | - |
-| Удобство в работе | - | - |
-| Стоимость владения (учет инфраструктуры) | - | - |
+Из-за того, что в ТЗ оговорено, что многие детали повторяются в разных документах, то критическим становится требование про метаданные.
+
+| Критерий | ChromaDB                                                                                                         | FAISS                                                                                                |
+| - |------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| Скорость поиска и индексации | Высокая. Построена на основе векторов в памяти, но может уступать оптимизированному FAISS на очень больших индексах. | Чрезвычайно высокая. Эталонная библиотека, оптимизированная на C++ и CUDA. Лидер в производительности. |
+| Сложность внедрения и поддержки |    Готовая к использованию. Embedded-решение с простым Python API. Сама заботится о персистентности, управлении коллекциями и метаданных.                                                                                                              | -                                                                                                    |
+| Удобство в работе |   Очень удобна. Хранит и вектора, и метаданные, и сами документы (или ссылки на них) вместе. Поиск по метаданным "из коробки".                                                                                                               |     Нужно самостоятельно управлять метаданными (например, хранить текст и ID в SQLite, а вектора в FAISS                                                                                                 |
+| Стоимость владения (учет инфраструктуры) |   Бесплатная (опенсорс). Затраты на инфраструктуру аналогичны FAISS.                                                                                                               |   Бесплатная. Затраты только на инфраструктуру (RAM, CPU).                                                                                                   |
 
 ### Конфигурация сервера (CPU/GPU)
 
+Для развёртывания полнофункционального RAG-бота с локальной LLM среднего размера потребуется мощный сервер.
+
+- GPU (Критически важно): 1x NVIDIA A100 40GB (например)
+- CPU: Многоядерный современный CPU (16+ ядер, например, AMD Ryzen 9/Intel i9 или серверный Xeon/Silver). Нужен для предобработки текста, работы эмбеддингов и обработки запросов.
+- RAM: Не менее 64 GB, рекомендуется 128+ GB DDR4/DDR5. Большие модели загружаются в VRAM, но оперативная память нужна для ОС, векторной БД (которая может занимать десятки ГБ) и обработки данных.
+- Хранилище: Быстрый NVMe SSD 1+ TB. Для быстрой загрузки модели (десятки ГБ) и работы с базой документов.
+
+Пример конфигурации: Сервер на базе Supermicro с 1x GPU A100, CPU Intel Xeon Silver 4310 (12 ядер), 128 GB RAM, 2 TB NVMe.
 
 ### Примеры конфигураций и выводы
+
+Учитывая строгое требование по конфиденциальности, все варианты с передачей данных в публичное облако исключаются. Рассматриваются только on-premise/private cloud решения.
+
+Вариант 1: Полностью локальное, сбалансированное (РЕКОМЕНДУЕМЫЙ)
+- LLM: Mixtral 8x7B (или Llama 3 70B). Хороший баланс качества, скорости и требований к ресурсам. 
+- Эмбеддинги: SFR-Embedding-Mistral или all-MiniLM-L6-v2 из Sentence-Transformers. 
+- Векторная БД: ChromaDB. Быстрое внедрение, удобство работы с метаданными, что критично для анализа "пробелов в документации". 
+- Инфраструктура: Выделенный сервер с A100 40GB GPU, 128 GB RAM, многоядерным CPU.
+
+Плюсы:
+- Полный контроль и безопасность данных. 
+- Высокое качество ответов после возможной тонкой настройки. 
+- Отсутствие текущих платежей за API. 
+- ChromaDB упрощает разработку и поддержку.
+
+Минусы:
+- Высокие первоначальные затраты на hardware. 
+- Требуется команда для поддержки MLOps/инфраструктуры.
+
+Вариант 2: Локальное, экономичное на старте
+
+- LLM: Phi-3-medium или Gemma 7B в 4-битном квантовании. 
+- Эмбеддинги: all-MiniLM-L6-v2. 
+- Векторная БД: FAISS (с самописной обвязкой для метаданных) или ChromaDB. 
+- Инфраструктура: Мощная рабочая станция с RTX 4090 24GB, 64 GB RAM.
+
+Плюсы:
+- Значительно ниже стартовая стоимость. 
+- Можно собрать работающий прототип для демонстрации ценности.
+
+Минусы:
+- Качество ответов LLM может быть ниже на сложных запросах. 
+- Ограниченная масштабируемость. При росте нагрузки и объёма данных придётся масштабировать железо.
 
 
 ## Задание 2. Подготовка базы знаний
@@ -86,3 +132,72 @@
 
 
 ## Задание 4. Реализация RAG-бота с техниками промптинга
+
+Код бота реализован внутри файла [main.py](rag/__main__.py).
+
+В качестве модели LLM была выбрана "openai/gpt-oss-20b".
+Если есть доступ к VPN, можно выбрать модель gpt.
+
+Чтобы запустить:
+```bash
+pip install -r requirements.txt # скачивание необходимых зависимостей
+cd rag
+export HF_TOKEN=<enter your token here>
+python __main__.py
+```
+
+### Примеры успешной работы:
+
+![Пример 1](rag/example1.png)
+
+Полный текст ответа:
+Reasoning:
+We need to answer: "tell me about Smith family". We have context: Debra Smith, Kristina Smith, Robert Rockbell, Amy Rockbell, Stephen Banks, Tammy Banks. They are in a fictional world. The user asks "tell me about Smith family". Should summarize. Use context only. So we should mention Debra Smith is paternal grandmother of Kristina Smith, mother of Robert Rockbell, mother-in-law of Amy Rockbell, grandmother-in-law of Stephen Banks, maternal great-grandmother of Stephen and Kristina's unnamed children, also a surgeon and weapon smith. Kristina Smith is daughter of Robert and Amy, granddaughter of Debra, training surgeon and mechanical repair specialist. Also mention that Debra Smith is also a well-known mechanic and surgeon in youth. So summarizing. Also mention Debra appears in Chapter 9. The user wants about the Smith family. Provide concise.
+--------------------------------------------------
+Final Answer::
+**Smith Family – Quick Overview**
+
+| Person | Relationship | Key Traits & Roles |
+|--------|--------------|--------------------|
+| **Debra Smith** | - Paternal grandmother of Kristina Smith<br>- Mother of Robert Rockbell (and thus mother‑in‑law to Amy Rockbell)<br>- Grandmother
+================================================================================
+
+![Пример 2](rag/example2.png)
+Полный текст ответа:
+
+Reasoning:
+We need to find from context a job of Ronald Jones. The context includes mention: "Bio-programmer Dr. Ronald Jones." Also "he recognizes his old colleague from the Wolfwatch Civil War, Bio-programmer Dr. Ronald Jones." So job is Bio-programmer, and also perhaps Dr. indicates a doctor, maybe a researcher. The question: "name a job of Ronald Jones". So answer: Bio-programmer. Could also say "Doctor" or "Biologist" but the context explicitly says "Bio-programmer Dr. Ronald Jones". So answer: Bio-programmer. We'll respond with that.
+--------------------------------------------------
+Final Answer::
+**Job:** Bio‑programmer (Dr. Ronald Jones).
+
+
+### Примеры диалогов, когда бот говорит "Я не знаю":
+
+![Пример 3](rag/example3.png)
+
+Полный текст ответа:
+
+Reasoning:
+We need to answer: "who is May?" We have context paragraphs; none mention a person named May. Let's search for May. Paragraphs: 1: Alicia Jackson, Joseph, Scott. 2: James, Mrs. Perez. 3: Theophrastus Bombastus, Slave 23, Van Jeffrey. 4: Colonel Scott Jefferson, Riza. 5: someone deciding to sacrifice. No mention of May. So answer: I don't know.
+--------------------------------------------------
+Final Answer::
+I don't know.
+
+![Пример 4](rag/example4.png)
+
+
+## Задание 5. Запуск и демонстрация работы бота
+
+Код бота c защитой реализован внутри файла [main.py](secure_rag/__main__.py).
+
+Использованная защита:
+- Pre-prompt фильтрация: System message с явным запретом выполнения инструкций из документов 
+- Post-проверка чанков: Функция contains_malicious_pattern() отсеивает вредоносные чанки 
+- Регулярные выражения: Поиск паттернов типа "ignore all instructions", "output:.*password"
+- Честные "I don't know": Когда контекст отсутствует, бот не выдумывает ответ
+
+### Примеры успешной работы:
+
+
+### Примеры работы с I don't know или попытками найти секретную информацию:
