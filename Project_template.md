@@ -146,44 +146,17 @@ export HF_TOKEN=<enter your token here>
 python __main__.py
 ```
 
-### Примеры успешной работы:
+### Примеры успешной работы
 
 ![Пример 1](rag/example1.png)
 
-Полный текст ответа:
-Reasoning:
-We need to answer: "tell me about Smith family". We have context: Debra Smith, Kristina Smith, Robert Rockbell, Amy Rockbell, Stephen Banks, Tammy Banks. They are in a fictional world. The user asks "tell me about Smith family". Should summarize. Use context only. So we should mention Debra Smith is paternal grandmother of Kristina Smith, mother of Robert Rockbell, mother-in-law of Amy Rockbell, grandmother-in-law of Stephen Banks, maternal great-grandmother of Stephen and Kristina's unnamed children, also a surgeon and weapon smith. Kristina Smith is daughter of Robert and Amy, granddaughter of Debra, training surgeon and mechanical repair specialist. Also mention that Debra Smith is also a well-known mechanic and surgeon in youth. So summarizing. Also mention Debra appears in Chapter 9. The user wants about the Smith family. Provide concise.
---------------------------------------------------
-Final Answer::
-**Smith Family – Quick Overview**
-
-| Person | Relationship | Key Traits & Roles |
-|--------|--------------|--------------------|
-| **Debra Smith** | - Paternal grandmother of Kristina Smith<br>- Mother of Robert Rockbell (and thus mother‑in‑law to Amy Rockbell)<br>- Grandmother
-================================================================================
 
 ![Пример 2](rag/example2.png)
-Полный текст ответа:
-
-Reasoning:
-We need to find from context a job of Ronald Jones. The context includes mention: "Bio-programmer Dr. Ronald Jones." Also "he recognizes his old colleague from the Wolfwatch Civil War, Bio-programmer Dr. Ronald Jones." So job is Bio-programmer, and also perhaps Dr. indicates a doctor, maybe a researcher. The question: "name a job of Ronald Jones". So answer: Bio-programmer. Could also say "Doctor" or "Biologist" but the context explicitly says "Bio-programmer Dr. Ronald Jones". So answer: Bio-programmer. We'll respond with that.
---------------------------------------------------
-Final Answer::
-**Job:** Bio‑programmer (Dr. Ronald Jones).
 
 
 ### Примеры диалогов, когда бот говорит "Я не знаю":
 
 ![Пример 3](rag/example3.png)
-
-Полный текст ответа:
-
-Reasoning:
-We need to answer: "who is May?" We have context paragraphs; none mention a person named May. Let's search for May. Paragraphs: 1: Alicia Jackson, Joseph, Scott. 2: James, Mrs. Perez. 3: Theophrastus Bombastus, Slave 23, Van Jeffrey. 4: Colonel Scott Jefferson, Riza. 5: someone deciding to sacrifice. No mention of May. So answer: I don't know.
---------------------------------------------------
-Final Answer::
-I don't know.
-
 ![Пример 4](rag/example4.png)
 
 
@@ -199,5 +172,23 @@ I don't know.
 
 ### Примеры успешной работы:
 
+![Пример 1](secure_rag/example1.png)
+![Пример 2](secure_rag/example2.png)
+![Пример 3](secure_rag/example3.png)
 
-### Примеры работы с I don't know или попытками найти секретную информацию:
+Дополнительно: примеры из пункта выше
+
+![Пример 4](rag/example1.png)
+![Пример 5](rag/example2.png)
+
+
+### Примеры работы с I don't know или попытками найти секретную информацию
+
+![Пример 1](secure_rag/bad_example1.png)
+![Пример 2](secure_rag/bad_example2.png)
+![Пример 3](secure_rag/bad_example3.png)
+
+Дополнительно: примеры из пункта выше
+
+![Пример 4](rag/example3.png)
+![Пример 5](rag/example4.png)
