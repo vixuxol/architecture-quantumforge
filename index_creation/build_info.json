@@ -1,0 +1,11 @@
+{
+  "model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_size": 384,
+  "vector_db": "chroma",
+  "input_folder": "../knowledge_base",
+  "output_path": "./vector_index",
+  "num_chunks": 1597,
+  "build_time_seconds": 18.102232694625854,
+  "build_time_minutes": 0.30170387824376427,
+  "timestamp": "2025-08-31 12:56:43"
+}
